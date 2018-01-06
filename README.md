@@ -13,6 +13,7 @@ It's missing a lot of things and the implementation is badly typed.
 - rei interface
 - Union types
 - Interface types
+- Custom scalar types
 - Enums (almost done)
 - Properly type the implementation (aka remove some Obj.magic :S).
 - Examples
