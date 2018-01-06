@@ -1,0 +1,16 @@
+{
+  "name": "bs-graphql-js",
+  "version": "0.1.0",
+  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors"],
+  "sources": [
+    "src"
+  ],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "bs-dependencies": [],
+  "namespace": true,
+  "refmt": 3
+}
