@@ -11,30 +11,42 @@ type executionResult =
 exception GraphQLError(string);
 
 type t;
+
 type graphqlType;
+
 /* Js types */
 [@bs.val] [@bs.module "graphql"]
 external graphqlString : graphqlType = "GraphQLString";
+
 [@bs.val] [@bs.module "graphql"]
 external graphqlFloat : graphqlType = "GraphQLFloat";
+
 [@bs.val] [@bs.module "graphql"]
 external graphqlInt : graphqlType = "GraphQLInt";
+
 [@bs.val] [@bs.module "graphql"]
 external graphqlBool : graphqlType = "GraphQLBoolean";
+
 [@bs.val] [@bs.module "graphql"]
 external graphqlId : graphqlType = "GraphQLID";
+
 [@bs.new] [@bs.module "graphql"]
 external graphqlObject : 'a => graphqlType = "GraphQLObjectType";
+
 [@bs.new] [@bs.module "graphql"]
 external graphqlNonNull : graphqlType => graphqlType = "GraphQLNonNull";
+
 [@bs.new] [@bs.module "graphql"]
 external graphqlList : graphqlType => graphqlType = "GraphQLList";
+
 /* Js input types */
 [@bs.new] [@bs.module "graphql"]
 external graphqlInputObject : 'a => graphqlType = "GraphQLInputObjectType";
+
 type deprecated =
   | Deprecated(string)
   | NotDeprecated;
+
 module Arg = {
   type obj('a, 'b) = {
     name: string,
@@ -80,7 +92,9 @@ module Arg = {
   let id = Id;
   type any('a);
 };
+
 type jsInteropType('a, 'b);
+
 type obj('ctx, 'src) = {
   name: string,
   fields: list(field('ctx, 'src)),
@@ -115,19 +129,30 @@ and typ(_, _) =
   | Int: typ('ctx, option(int))
   | Bool: typ('ctx, option(bool))
   | Id: typ('ctx, option(string));
+
 let field = (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   Field({name, typ, args, resolve, deprecated, doc});
+
 let asyncField =
     (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   AsyncField({name, typ, args, resolve, deprecated, doc});
+
 let string = String;
+
 let float = Float;
+
 let int = Int;
+
 let bool = Bool;
+
 let id = Id;
+
 let nonNull = t => NonNull(t);
+
 let list = t => List(t);
+
 let obj = (~doc=?, name, ~fields) => Object({name, fields, doc});
+
 let jsObjMap = list =>
   list
   |> List.fold_left(
@@ -137,6 +162,7 @@ let jsObjMap = list =>
        },
        Js.Dict.empty()
      );
+
 type jsField('a) = {
   .
   "type": graphqlType,
@@ -153,8 +179,10 @@ type jsField('a) = {
   "deprecationReason": Js.nullable(string),
   "description": Js.nullable(string)
 };
+
 /* TODO: it would be possible to type this properly */
 let interopJsType = t => JsInteropType(t);
+
 let rec toJsType: type src. typ('ctx, src) => graphqlType =
   typ =>
     switch typ {
@@ -306,21 +334,20 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
   };
 
 [@bs.val] [@bs.module "graphql"]
-external execute_ : (Schema.t, string, 'b, 'c, Js.Json.t) => Js.Promise.t('d) =
+external execute_ : (t, string, 'b, 'c, Js.Json.t) => Js.Promise.t('d) =
   "graphql";
 
 [@bs.val] [@bs.module "graphql"]
 external parse_ : string => documentAst = "parse";
 
 [@bs.val] [@bs.module "graphql"]
-external validate_ : (Schema.t, documentAst, 'rules) => array(Js.Exn.t) =
-  "validate";
+external validate_ : (t, documentAst, 'rules) => array(Js.Exn.t) = "validate";
 
 [@bs.val] [@bs.module "graphql"] external specifiedRules : array(rule) = "";
 
 let execute =
     (
-      ~schema: Schema.t,
+      ~schema: t,
       ~query: string,
       ~rootValue: 'b,
       ~context: 'c,
@@ -336,7 +363,7 @@ let execute =
        )
   );
 
-let validate = (~schema: Schema.t, ~query: string) : array(exn) => {
+let validate = (~schema: t, ~query: string) : array(exn) => {
   let ast = parse_(query);
   validate_(schema, ast, specifiedRules)
   |> Array.map(err =>

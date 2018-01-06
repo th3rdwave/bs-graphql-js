@@ -1,4 +1,4 @@
-open GraphQL.Schema;
+open Schema;
 
 [@bs.module "graphql-relay"]
 external fromGlobalId :
