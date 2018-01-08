@@ -12,9 +12,8 @@ It's missing a lot of things and the implementation is badly typed.
 
 - rei interface
 - Union types
-- Interface types
+- Better type safety for interfaces
 - Custom scalar types
-- Enums (almost done)
 - Properly type the implementation (aka remove some Obj.magic :S).
 - Examples
 - Maybe separate relay stuff in a separate package.
