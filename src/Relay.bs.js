@@ -33,7 +33,7 @@ function Connection() {
             ]
           ];
   };
-  var pageInfoType = Schema$BsGraphqlJs.obj(/* Some */["Information about pagination in a connection."], "BsPageInfo", /* :: */[
+  var pageInfoType = Schema$BsGraphqlJs.obj(/* Some */["Information about pagination in a connection."], /* None */0, /* None */0, "BsPageInfo", /* :: */[
         Schema$BsGraphqlJs.field(/* Some */["When paginating forwards, are there more items?"], /* None */0, /* [] */0, "hasNextPage", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.bool), (function (_, node) {
                 return node[/* hasNextPage */0];
               })),
@@ -55,7 +55,7 @@ function Connection() {
         ]
       ]);
   var definitions = function (name, nodeType) {
-    var edgeType = Schema$BsGraphqlJs.obj(/* Some */["An edge in a connection."], name + "Edge", /* :: */[
+    var edgeType = Schema$BsGraphqlJs.obj(/* Some */["An edge in a connection."], /* None */0, /* None */0, name + "Edge", /* :: */[
           Schema$BsGraphqlJs.field(/* Some */["The item at the end of the edge"], /* None */0, /* [] */0, "node", Schema$BsGraphqlJs.nonNull(nodeType), (function (_, node) {
                   return node[/* node */0];
                 })),
@@ -66,7 +66,7 @@ function Connection() {
             /* [] */0
           ]
         ]);
-    var connectionType = Schema$BsGraphqlJs.obj(/* Some */["A connection to a list of items."], name + "Connection", /* :: */[
+    var connectionType = Schema$BsGraphqlJs.obj(/* Some */["A connection to a list of items."], /* None */0, /* None */0, name + "Connection", /* :: */[
           Schema$BsGraphqlJs.field(/* Some */["Information to aid in pagination."], /* None */0, /* [] */0, "pageInfo", Schema$BsGraphqlJs.nonNull(pageInfoType), (function (_, node) {
                   return node[/* pageInfo */1];
                 })),

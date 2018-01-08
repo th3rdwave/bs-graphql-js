@@ -14,6 +14,10 @@ type t;
 
 type graphqlType;
 
+let interfaceMap = Hashtbl.create(10);
+
+let objectMap = Hashtbl.create(10);
+
 /* Js types */
 [@bs.val] [@bs.module "graphql"]
 external graphqlString : graphqlType = "GraphQLString";
@@ -32,6 +36,9 @@ external graphqlId : graphqlType = "GraphQLID";
 
 [@bs.new] [@bs.module "graphql"]
 external graphqlObject : 'a => graphqlType = "GraphQLObjectType";
+
+[@bs.new] [@bs.module "graphql"]
+external graphqlInterface : 'a => graphqlType = "GraphQLInterfaceType";
 
 [@bs.new] [@bs.module "graphql"]
 external graphqlNonNull : graphqlType => graphqlType = "GraphQLNonNull";
@@ -95,9 +102,21 @@ module Arg = {
 
 type jsInteropType('a, 'b);
 
-type obj('ctx, 'src) = {
+type obj('ctx, 'src, 'int) = {
   name: string,
   fields: list(field('ctx, 'src)),
+  interfaces: list(typ('ctx, 'int)),
+  isTypeOf: option('src => bool),
+  doc: option(string)
+}
+and interface('ctx, 'out) = {
+  name: string,
+  fields: list(field('ctx, 'out)),
+  doc: option(string)
+}
+and interfaceField('ctx, 'out) = {
+  name: string,
+  typ: typ('ctx, 'out),
   doc: option(string)
 }
 and fieldRec('ctx, 'src, 'args, 'out) = {
@@ -119,9 +138,11 @@ and asyncFieldRec('ctx, 'src, 'args, 'out) = {
 and field(_, _) =
   | Field(fieldRec('ctx, 'src, 'args, 'out)): field('ctx, 'src)
   | AsyncField(asyncFieldRec('ctx, 'src, 'args, 'out)): field('ctx, 'src)
+  | InterfaceField(interfaceField('ctx, 'out)): field('ctx, 'src)
 and typ(_, _) =
-  | Object(obj('ctx, 'src)): typ('ctx, option('src))
+  | Object(obj('ctx, 'src, 'int)): typ('ctx, option('src))
   | JsInteropType(jsInteropType('ctx, 'src)): typ('ctx, option('src))
+  | Interface(interface('ctx, 'src)): typ('ctx, option('src))
   | NonNull(typ('ctx, option('src))): typ('ctx, 'src)
   | List(typ('ctx, 'src)): typ('ctx, option(array('src)))
   | String: typ('ctx, option(string))
@@ -151,7 +172,12 @@ let nonNull = t => NonNull(t);
 
 let list = t => List(t);
 
-let obj = (~doc=?, name, ~fields) => Object({name, fields, doc});
+let obj = (~doc=?, ~interfaces=[], ~isTypeOf=?, name, ~fields) =>
+  Object({name, fields, interfaces, isTypeOf, doc});
+
+let interface = (~doc=?, name, ~fields) => Interface({doc, name, fields});
+
+let interfaceField = (~doc=?, name, ~typ) => InterfaceField({doc, name, typ});
 
 let jsObjMap = list =>
   list
@@ -187,20 +213,56 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
   typ =>
     switch typ {
     | JsInteropType(t) => Obj.magic(t)
-    | Object({name, fields, doc}) =>
-      graphqlObject({
-        "name": name,
-        "fields":
-          fields
-          |> List.map(f =>
-               switch f {
-               | Field(f) => (f.name, toJsSchema(Field(f)))
-               | AsyncField(f) => (f.name, toJsSchema(AsyncField(f)))
-               }
-             )
-          |> jsObjMap,
-        "description": Js.Nullable.from_opt(doc)
-      })
+    | Object({name, fields, doc, interfaces, isTypeOf}) =>
+      switch (Hashtbl.find(objectMap, name)) {
+      | i => i
+      | exception Not_found =>
+        let jsObject =
+          graphqlObject({
+            "name": name,
+            "fields":
+              fields
+              |> List.map(f =>
+                   switch f {
+                   | Field(f) => (f.name, toJsSchema(Field(f)))
+                   | AsyncField(f) => (f.name, toJsSchema(AsyncField(f)))
+                   | InterfaceField(f) => (
+                       f.name,
+                       toJsSchema(InterfaceField(f))
+                     )
+                   }
+                 )
+              |> jsObjMap,
+            "interfaces": interfaces |> List.map(toJsType) |> Array.of_list,
+            "isTypeOf": Js.Nullable.from_opt(isTypeOf),
+            "description": Js.Nullable.from_opt(doc)
+          });
+        Hashtbl.add(objectMap, name, jsObject);
+        jsObject;
+      }
+    | Interface({name, fields}) =>
+      switch (Hashtbl.find(interfaceMap, name)) {
+      | i => i
+      | exception Not_found =>
+        let jsInterface =
+          graphqlInterface({
+            "name": name,
+            "fields":
+              fields
+              |> List.map((InterfaceField({name, typ, doc})) =>
+                   (
+                     name,
+                     {
+                       "type": toJsType(typ),
+                       "description": Js.Nullable.from_opt(doc)
+                     }
+                   )
+                 )
+              |> jsObjMap
+          });
+        Hashtbl.add(interfaceMap, name, jsInterface);
+        jsInterface;
+      }
     | NonNull(t) => graphqlNonNull(toJsType(t))
     | List(t) => graphqlList(toJsType(t))
     | String => graphqlString
@@ -259,11 +321,15 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
       switch field {
       | Field(f) => Obj.magic(f)
       | AsyncField(f) => Obj.magic(f)
+      | InterfaceField(_) =>
+        raise(Invalid_argument("Should not resolve interface field"))
       };
     let maybeResolve = (f, value) =>
       switch f {
       | Field(_) => Obj.magic(Js.Promise.resolve(value))
       | AsyncField(_) => Obj.magic(value)
+      | InterfaceField(_) =>
+        raise(Invalid_argument("Should not resolve interface field"))
       };
     let resolveArg: type a. (string, Arg.typ(a), _, _) => _ =
       (name, typ, jsArgs, f) =>

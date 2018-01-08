@@ -1,15 +1,21 @@
 'use strict';
 
-var List              = require("bs-platform/lib/js/list.js");
-var $$Array           = require("bs-platform/lib/js/array.js");
-var Block             = require("bs-platform/lib/js/block.js");
-var Curry             = require("bs-platform/lib/js/curry.js");
-var Graphql           = require("graphql");
-var Js_boolean        = require("bs-platform/lib/js/js_boolean.js");
-var Caml_exceptions   = require("bs-platform/lib/js/caml_exceptions.js");
-var Js_null_undefined = require("bs-platform/lib/js/js_null_undefined.js");
+var List                    = require("bs-platform/lib/js/list.js");
+var $$Array                 = require("bs-platform/lib/js/array.js");
+var Block                   = require("bs-platform/lib/js/block.js");
+var Curry                   = require("bs-platform/lib/js/curry.js");
+var Hashtbl                 = require("bs-platform/lib/js/hashtbl.js");
+var Graphql                 = require("graphql");
+var Js_boolean              = require("bs-platform/lib/js/js_boolean.js");
+var Caml_exceptions         = require("bs-platform/lib/js/caml_exceptions.js");
+var Js_null_undefined       = require("bs-platform/lib/js/js_null_undefined.js");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 var GraphQLError = Caml_exceptions.create("Schema-BsGraphqlJs.GraphQLError");
+
+var interfaceMap = Hashtbl.create(/* None */0, 10);
+
+var objectMap = Hashtbl.create(/* None */0, 10);
 
 function arg(doc, name, typ) {
   return /* Arg */Block.__(0, [/* record */[
@@ -82,17 +88,36 @@ function asyncField(doc, $staropt$star, args, name, typ, resolve) {
 }
 
 function nonNull$1(t) {
-  return /* NonNull */Block.__(2, [t]);
+  return /* NonNull */Block.__(3, [t]);
 }
 
 function list$1(t) {
-  return /* List */Block.__(3, [t]);
+  return /* List */Block.__(4, [t]);
 }
 
-function obj$1(doc, name, fields) {
+function obj$1(doc, $staropt$star, isTypeOf, name, fields) {
+  var interfaces = $staropt$star ? $staropt$star[0] : /* [] */0;
   return /* Object */Block.__(0, [/* record */[
               /* name */name,
               /* fields */fields,
+              /* interfaces */interfaces,
+              /* isTypeOf */isTypeOf,
+              /* doc */doc
+            ]]);
+}
+
+function $$interface(doc, name, fields) {
+  return /* Interface */Block.__(2, [/* record */[
+              /* name */name,
+              /* fields */fields,
+              /* doc */doc
+            ]]);
+}
+
+function interfaceField(doc, name, typ) {
+  return /* InterfaceField */Block.__(2, [/* record */[
+              /* name */name,
+              /* typ */typ,
               /* doc */doc
             ]]);
 }
@@ -127,30 +152,95 @@ function toJsType(typ) {
     switch (typ.tag | 0) {
       case 0 : 
           var match = typ[0];
-          return new Graphql.GraphQLObjectType({
-                      name: match[/* name */0],
-                      fields: jsObjMap(List.map((function (f) {
-                                  if (f.tag) {
-                                    var f$1 = f[0];
-                                    return /* tuple */[
-                                            f$1[/* name */0],
-                                            toJsSchema(/* AsyncField */Block.__(1, [f$1]))
-                                          ];
-                                  } else {
-                                    var f$2 = f[0];
-                                    return /* tuple */[
-                                            f$2[/* name */0],
-                                            toJsSchema(/* Field */Block.__(0, [f$2]))
-                                          ];
-                                  }
-                                }), match[/* fields */1])),
-                      description: Js_null_undefined.from_opt(match[/* doc */2])
-                    });
+          var name = match[/* name */0];
+          try {
+            return Hashtbl.find(objectMap, name);
+          }
+          catch (exn){
+            if (exn === Caml_builtin_exceptions.not_found) {
+              var jsObject = new Graphql.GraphQLObjectType({
+                    name: name,
+                    fields: jsObjMap(List.map((function (f) {
+                                switch (f.tag | 0) {
+                                  case 0 : 
+                                      var f$1 = f[0];
+                                      return /* tuple */[
+                                              f$1[/* name */0],
+                                              toJsSchema(/* Field */Block.__(0, [f$1]))
+                                            ];
+                                  case 1 : 
+                                      var f$2 = f[0];
+                                      return /* tuple */[
+                                              f$2[/* name */0],
+                                              toJsSchema(/* AsyncField */Block.__(1, [f$2]))
+                                            ];
+                                  case 2 : 
+                                      var f$3 = f[0];
+                                      return /* tuple */[
+                                              f$3[/* name */0],
+                                              toJsSchema(/* InterfaceField */Block.__(2, [f$3]))
+                                            ];
+                                  
+                                }
+                              }), match[/* fields */1])),
+                    interfaces: $$Array.of_list(List.map(toJsType, match[/* interfaces */2])),
+                    isTypeOf: Js_null_undefined.from_opt(match[/* isTypeOf */3]),
+                    description: Js_null_undefined.from_opt(match[/* doc */4])
+                  });
+              Hashtbl.add(objectMap, name, jsObject);
+              return jsObject;
+            } else {
+              throw exn;
+            }
+          }
+          break;
       case 1 : 
           return typ[0];
       case 2 : 
-          return new Graphql.GraphQLNonNull(toJsType(typ[0]));
+          var match$1 = typ[0];
+          var name$1 = match$1[/* name */0];
+          try {
+            return Hashtbl.find(interfaceMap, name$1);
+          }
+          catch (exn$1){
+            if (exn$1 === Caml_builtin_exceptions.not_found) {
+              var jsInterface = new Graphql.GraphQLInterfaceType({
+                    name: name$1,
+                    fields: jsObjMap(List.map((function (param) {
+                                switch (param.tag | 0) {
+                                  case 0 : 
+                                  case 1 : 
+                                      throw [
+                                            Caml_builtin_exceptions.match_failure,
+                                            [
+                                              "/Users/janic/Developer/bs-graphql-js/src/Schema.re",
+                                              252,
+                                              26
+                                            ]
+                                          ];
+                                  case 2 : 
+                                      var match = param[0];
+                                      return /* tuple */[
+                                              match[/* name */0],
+                                              {
+                                                type: toJsType(match[/* typ */1]),
+                                                description: Js_null_undefined.from_opt(match[/* doc */2])
+                                              }
+                                            ];
+                                  
+                                }
+                              }), match$1[/* fields */1]))
+                  });
+              Hashtbl.add(interfaceMap, name$1, jsInterface);
+              return jsInterface;
+            } else {
+              throw exn$1;
+            }
+          }
+          break;
       case 3 : 
+          return new Graphql.GraphQLNonNull(toJsType(typ[0]));
+      case 4 : 
           return new Graphql.GraphQLList(toJsType(typ[0]));
       
     }
@@ -226,16 +316,35 @@ function toJsArgs(_args, dict) {
 }
 
 function toJsSchema(field) {
-  var f = field[0];
-  var deprecated = f[/* deprecated */4];
-  var resolve = f[/* resolve */3];
-  var args = f[/* args */2];
-  var typ = f[/* typ */1];
+  var match;
+  switch (field.tag | 0) {
+    case 0 : 
+    case 1 : 
+        match = field[0];
+        break;
+    case 2 : 
+        throw [
+              Caml_builtin_exceptions.invalid_argument,
+              "Should not resolve interface field"
+            ];
+    
+  }
+  var deprecated = match[/* deprecated */4];
+  var resolve = match[/* resolve */3];
+  var args = match[/* args */2];
+  var typ = match[/* typ */1];
   var maybeResolve = function (f, value) {
-    if (f.tag) {
-      return value;
-    } else {
-      return Promise.resolve(value);
+    switch (f.tag | 0) {
+      case 0 : 
+          return Promise.resolve(value);
+      case 1 : 
+          return value;
+      case 2 : 
+          throw [
+                Caml_builtin_exceptions.invalid_argument,
+                "Should not resolve interface field"
+              ];
+      
     }
   };
   var resolveArg = function (name, typ, jsArgs, f) {
@@ -281,7 +390,7 @@ function toJsSchema(field) {
           } else {
             exit = 1;
           }
-        } else if (typ.tag === 2) {
+        } else if (typ.tag === 3) {
           _nullable = /* false */0;
           _typ = typ[0];
           continue ;
@@ -310,7 +419,7 @@ function toJsSchema(field) {
           args: jsArgs,
           resolve: jsResolve,
           deprecationReason: deprecated ? deprecated[0] : null,
-          description: Js_null_undefined.from_opt(f[/* doc */5])
+          description: Js_null_undefined.from_opt(match[/* doc */5])
         };
 }
 
@@ -346,24 +455,28 @@ var bool = /* Bool */3;
 
 var id = /* Id */4;
 
-exports.GraphQLError  = GraphQLError;
-exports.Arg           = Arg;
-exports.field         = field;
-exports.asyncField    = asyncField;
-exports.string        = string;
-exports.$$float       = $$float;
-exports.$$int         = $$int;
-exports.bool          = bool;
-exports.id            = id;
-exports.nonNull       = nonNull$1;
-exports.list          = list$1;
-exports.obj           = obj$1;
-exports.jsObjMap      = jsObjMap;
-exports.interopJsType = interopJsType;
-exports.toJsType      = toJsType;
-exports.toJsArgType   = toJsArgType;
-exports.toJsArgs      = toJsArgs;
-exports.toJsSchema    = toJsSchema;
-exports.execute       = execute;
-exports.validate      = validate;
-/* graphql Not a pure module */
+exports.GraphQLError   = GraphQLError;
+exports.interfaceMap   = interfaceMap;
+exports.objectMap      = objectMap;
+exports.Arg            = Arg;
+exports.field          = field;
+exports.asyncField     = asyncField;
+exports.string         = string;
+exports.$$float        = $$float;
+exports.$$int          = $$int;
+exports.bool           = bool;
+exports.id             = id;
+exports.nonNull        = nonNull$1;
+exports.list           = list$1;
+exports.obj            = obj$1;
+exports.$$interface    = $$interface;
+exports.interfaceField = interfaceField;
+exports.jsObjMap       = jsObjMap;
+exports.interopJsType  = interopJsType;
+exports.toJsType       = toJsType;
+exports.toJsArgType    = toJsArgType;
+exports.toJsArgs       = toJsArgs;
+exports.toJsSchema     = toJsSchema;
+exports.execute        = execute;
+exports.validate       = validate;
+/* interfaceMap Not a pure module */
