@@ -62,46 +62,50 @@ module Connection = (Ctx: AppContext) => {
   };
   let forwardsArgs:
     type a. unit => Arg.argList(a, (option(int), option(string)) => a) =
-    () => Arg.[arg("first", ~typ=int), arg("after", ~typ=string)];
+    () => {
+      open! Arg;
+      [arg("first", ~typ=int), arg("after", ~typ=string)];
+    };
   let pageInfoType: typ(Ctx.t, option(pageInfo)) =
     /* Needs a different name than the one in graphql-relay */
     obj(
       "BsPageInfo",
       ~doc="Information about pagination in a connection.",
-      ~fields=[
-        field(
-          "hasNextPage",
-          ~typ=nonNull(bool),
-          ~args=[],
-          ~doc="When paginating forwards, are there more items?",
-          ~resolve=(_ctx, node) =>
-          node.hasNextPage
-        ),
-        field(
-          "hasPreviousPage",
-          ~typ=nonNull(bool),
-          ~args=[],
-          ~doc="When paginating backwards, are there more items?",
-          ~resolve=(_ctx, node) =>
-          node.hasPreviousPage
-        ),
-        field(
-          "startCursor",
-          ~typ=string,
-          ~args=[],
-          ~doc="When paginating backwards, the cursor to continue.",
-          ~resolve=(_ctx, node) =>
-          node.startCursor
-        ),
-        field(
-          "endCursor",
-          ~typ=string,
-          ~args=[],
-          ~doc="When paginating forwards, the cursor to continue.",
-          ~resolve=(_ctx, node) =>
-          node.endCursor
-        )
-      ]
+      ~fields=
+        lazy [
+          field(
+            "hasNextPage",
+            ~typ=nonNull(bool),
+            ~args=[],
+            ~doc="When paginating forwards, are there more items?",
+            ~resolve=(_ctx, node) =>
+            node.hasNextPage
+          ),
+          field(
+            "hasPreviousPage",
+            ~typ=nonNull(bool),
+            ~args=[],
+            ~doc="When paginating backwards, are there more items?",
+            ~resolve=(_ctx, node) =>
+            node.hasPreviousPage
+          ),
+          field(
+            "startCursor",
+            ~typ=string,
+            ~args=[],
+            ~doc="When paginating backwards, the cursor to continue.",
+            ~resolve=(_ctx, node) =>
+            node.startCursor
+          ),
+          field(
+            "endCursor",
+            ~typ=string,
+            ~args=[],
+            ~doc="When paginating forwards, the cursor to continue.",
+            ~resolve=(_ctx, node) =>
+            node.endCursor
+          )
+        ]
     );
   type definition('a, 'b) = {
     edgeType: 'a,
@@ -112,45 +116,47 @@ module Connection = (Ctx: AppContext) => {
       obj(
         name ++ "Edge",
         ~doc="An edge in a connection.",
-        ~fields=[
-          field(
-            "node",
-            ~typ=nonNull(nodeType),
-            ~args=[],
-            ~resolve=(_ctx, node) => node.node,
-            ~doc="The item at the end of the edge"
-          ),
-          field(
-            "cursor",
-            ~typ=nonNull(string),
-            ~args=[],
-            ~resolve=(_ctx, node) => node.cursor,
-            ~doc="A cursor for use in pagination"
-          )
-        ]
+        ~fields=
+          lazy [
+            field(
+              "node",
+              ~typ=nonNull(nodeType),
+              ~args=[],
+              ~resolve=(_ctx, node) => node.node,
+              ~doc="The item at the end of the edge"
+            ),
+            field(
+              "cursor",
+              ~typ=nonNull(string),
+              ~args=[],
+              ~resolve=(_ctx, node) => node.cursor,
+              ~doc="A cursor for use in pagination"
+            )
+          ]
       );
     let connectionType =
       obj(
         name ++ "Connection",
         ~doc="A connection to a list of items.",
-        ~fields=[
-          field(
-            "pageInfo",
-            ~typ=nonNull(pageInfoType),
-            ~args=[],
-            ~doc="Information to aid in pagination.",
-            ~resolve=(_ctx, node) =>
-            node.pageInfo
-          ),
-          field(
-            "edges",
-            ~typ=nonNull(list(nonNull(edgeType))),
-            ~args=[],
-            ~doc="A list of edges.",
-            ~resolve=(_ctx, node) =>
-            node.edges
-          )
-        ]
+        ~fields=
+          lazy [
+            field(
+              "pageInfo",
+              ~typ=nonNull(pageInfoType),
+              ~args=[],
+              ~doc="Information to aid in pagination.",
+              ~resolve=(_ctx, node) =>
+              node.pageInfo
+            ),
+            field(
+              "edges",
+              ~typ=nonNull(list(nonNull(edgeType))),
+              ~args=[],
+              ~doc="A list of edges.",
+              ~resolve=(_ctx, node) =>
+              node.edges
+            )
+          ]
       );
     {edgeType, connectionType};
   };

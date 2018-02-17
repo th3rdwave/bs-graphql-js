@@ -1,5 +1,6 @@
 'use strict';
 
+var Block              = require("bs-platform/lib/js/block.js");
 var Schema$BsGraphqlJs = require("../src/Schema.bs.js");
 
 function getViewer() {
@@ -9,17 +10,19 @@ function getViewer() {
         ];
 }
 
-var viewerType = Schema$BsGraphqlJs.obj(/* None */0, "Viewer", /* :: */[
-      Schema$BsGraphqlJs.field(/* None */0, /* None */0, /* [] */0, "firstName", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.string), (function (_, node) {
-              return node[/* firstName */0];
-            })),
-      /* :: */[
-        Schema$BsGraphqlJs.field(/* None */0, /* None */0, /* [] */0, "lastName", Schema$BsGraphqlJs.string, (function (_, node) {
-                return /* Some */[node[/* lastName */1]];
-              })),
-        /* [] */0
-      ]
-    ]);
+var viewerType = Schema$BsGraphqlJs.obj(/* None */0, /* None */0, /* None */0, "Viewer", Block.__(246, [(function () {
+            return /* :: */[
+                    Schema$BsGraphqlJs.field(/* None */0, /* None */0, /* [] */0, "firstName", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.string), (function (_, node) {
+                            return node[/* firstName */0];
+                          })),
+                    /* :: */[
+                      Schema$BsGraphqlJs.field(/* None */0, /* None */0, /* [] */0, "lastName", Schema$BsGraphqlJs.string, (function (_, node) {
+                              return /* Some */[node[/* lastName */1]];
+                            })),
+                      /* [] */0
+                    ]
+                  ];
+          })]));
 
 var schema = Schema$BsGraphqlJs.field(/* None */0, /* None */0, /* [] */0, "viewer", Schema$BsGraphqlJs.nonNull(viewerType), (function (_, _$1) {
         return /* record */[

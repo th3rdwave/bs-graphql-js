@@ -1,4 +1,4 @@
-open BsGraphqlJs.Schema;
+open Schema;
 
 type viewer = {
   firstName: string,
@@ -12,7 +12,7 @@ type ctx = unit;
 let viewerType =
   obj(
     "Viewer",
-    ~fields=[
+    ~fields=lazy [
       /* Simple non null field */
       field("firstName", ~typ=nonNull(string), ~args=[], ~resolve=(_ctx, node) =>
         node.firstName

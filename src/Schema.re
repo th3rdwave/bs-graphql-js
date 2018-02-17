@@ -10,60 +10,71 @@ type executionResult =
 
 exception GraphQLError(string);
 
+
 type t;
-
 type graphqlType;
-
 let interfaceMap = Hashtbl.create(10);
-
 let objectMap = Hashtbl.create(10);
-
 /* Js types */
 [@bs.val] [@bs.module "graphql"]
 external graphqlString : graphqlType = "GraphQLString";
-
 [@bs.val] [@bs.module "graphql"]
 external graphqlFloat : graphqlType = "GraphQLFloat";
-
 [@bs.val] [@bs.module "graphql"]
 external graphqlInt : graphqlType = "GraphQLInt";
-
 [@bs.val] [@bs.module "graphql"]
 external graphqlBool : graphqlType = "GraphQLBoolean";
-
 [@bs.val] [@bs.module "graphql"]
 external graphqlId : graphqlType = "GraphQLID";
-
 [@bs.new] [@bs.module "graphql"]
 external graphqlObject : 'a => graphqlType = "GraphQLObjectType";
-
 [@bs.new] [@bs.module "graphql"]
 external graphqlInterface : 'a => graphqlType = "GraphQLInterfaceType";
-
 [@bs.new] [@bs.module "graphql"]
 external graphqlNonNull : graphqlType => graphqlType = "GraphQLNonNull";
-
 [@bs.new] [@bs.module "graphql"]
 external graphqlList : graphqlType => graphqlType = "GraphQLList";
-
+[@bs.new] external graphqlEnum : 'a => graphqlType = "GraphQLEnumType";
 /* Js input types */
 [@bs.new] [@bs.module "graphql"]
 external graphqlInputObject : 'a => graphqlType = "GraphQLInputObjectType";
-
+let toJsDoc = doc => Js.Nullable.from_opt(doc);
 type deprecated =
   | Deprecated(string)
   | NotDeprecated;
-
+let toJsDeprecationReason = d =>
+  switch d {
+  | Deprecated(message) => Js.Nullable.return(message)
+  | NotDeprecated => Js.Nullable.null
+  };
+type enumValue('a) = {
+  name: string,
+  doc: option(string),
+  deprecated,
+  value: 'a
+};
+let enumValue = (~doc=?, ~deprecated=NotDeprecated, name, ~value) => {
+  name,
+  doc,
+  deprecated,
+  value
+};
 module Arg = {
   type obj('a, 'b) = {
     name: string,
     fields: argList('a, 'b),
     doc: option(string)
   }
+  and enum('a) = {
+    name: string,
+    doc: option(string),
+    values: list(enumValue('a))
+  }
   and typ(_) =
     | Object(obj('a, 'b)): typ(option('a))
     | List(typ('a)): typ(array(option('a)))
     | NonNull(typ(option('a))): typ('a)
+    | Enum(enum('a)): typ(option('a))
     | String: typ(option(string))
     | Float: typ(option(float))
     | Int: typ(option(int))
@@ -90,6 +101,7 @@ module Arg = {
   let arg' = (~doc=?, ~default, name, ~typ) =>
     DefaultArg({name, typ, default, doc});
   let obj = (~doc=?, name, ~fields) => Object({name, fields, doc});
+  let enum = (~doc=?, name, ~values) => Enum({name, values, doc});
   let list = t => List(t);
   let nonNull = t => NonNull(t);
   let string = String;
@@ -99,19 +111,22 @@ module Arg = {
   let id = Id;
   type any('a);
 };
-
+type enum('a) = {
+  name: string,
+  doc: option(string),
+  values: list(enumValue('a))
+};
 type jsInteropType('a, 'b);
-
 type obj('ctx, 'src, 'int) = {
   name: string,
-  fields: list(field('ctx, 'src)),
+  fields: Lazy.t(list(field('ctx, 'src))),
   interfaces: list(typ('ctx, 'int)),
   isTypeOf: option('src => bool),
   doc: option(string)
 }
 and interface('ctx, 'out) = {
   name: string,
-  fields: list(field('ctx, 'out)),
+  fields: Lazy.t(list(field('ctx, 'out))),
   doc: option(string)
 }
 and interfaceField('ctx, 'out) = {
@@ -145,40 +160,30 @@ and typ(_, _) =
   | Interface(interface('ctx, 'src)): typ('ctx, option('src))
   | NonNull(typ('ctx, option('src))): typ('ctx, 'src)
   | List(typ('ctx, 'src)): typ('ctx, option(array('src)))
+  | Enum(enum('src)): typ('ctx, option('src))
   | String: typ('ctx, option(string))
   | Float: typ('ctx, option(float))
   | Int: typ('ctx, option(int))
   | Bool: typ('ctx, option(bool))
   | Id: typ('ctx, option(string));
-
 let field = (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   Field({name, typ, args, resolve, deprecated, doc});
-
 let asyncField =
     (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   AsyncField({name, typ, args, resolve, deprecated, doc});
-
 let string = String;
-
 let float = Float;
-
 let int = Int;
-
 let bool = Bool;
-
 let id = Id;
-
 let nonNull = t => NonNull(t);
-
 let list = t => List(t);
-
+let enum = (~doc=?, name, ~values) => Enum({doc, name, values});
 let obj = (~doc=?, ~interfaces=[], ~isTypeOf=?, name, ~fields) =>
   Object({name, fields, interfaces, isTypeOf, doc});
-
 let interface = (~doc=?, name, ~fields) => Interface({doc, name, fields});
-
-let interfaceField = (~doc=?, name, ~typ) => InterfaceField({doc, name, typ});
-
+let interfaceField = (~doc=?, name, ~typ) =>
+  InterfaceField({doc, name, typ});
 let jsObjMap = list =>
   list
   |> List.fold_left(
@@ -188,7 +193,6 @@ let jsObjMap = list =>
        },
        Js.Dict.empty()
      );
-
 type jsField('a) = {
   .
   "type": graphqlType,
@@ -205,10 +209,8 @@ type jsField('a) = {
   "deprecationReason": Js.nullable(string),
   "description": Js.nullable(string)
 };
-
 /* TODO: it would be possible to type this properly */
 let interopJsType = t => JsInteropType(t);
-
 let rec toJsType: type src. typ('ctx, src) => graphqlType =
   typ =>
     switch typ {
@@ -220,8 +222,8 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
         let jsObject =
           graphqlObject({
             "name": name,
-            "fields":
-              fields
+            "fields": () =>
+              Lazy.force(fields)
               |> List.map(f =>
                    switch f {
                    | Field(f) => (f.name, toJsSchema(Field(f)))
@@ -235,7 +237,7 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
               |> jsObjMap,
             "interfaces": interfaces |> List.map(toJsType) |> Array.of_list,
             "isTypeOf": Js.Nullable.from_opt(isTypeOf),
-            "description": Js.Nullable.from_opt(doc)
+            "description": toJsDoc(doc)
           });
         Hashtbl.add(objectMap, name, jsObject);
         jsObject;
@@ -247,16 +249,23 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
         let jsInterface =
           graphqlInterface({
             "name": name,
-            "fields":
-              fields
-              |> List.map((InterfaceField({name, typ, doc})) =>
-                   (
-                     name,
-                     {
-                       "type": toJsType(typ),
-                       "description": Js.Nullable.from_opt(doc)
-                     }
-                   )
+            "fields": () =>
+              Lazy.force(fields)
+              |> List.map(f =>
+                   switch f {
+                   | InterfaceField({name, typ, doc}) => (
+                       name,
+                       {"type": toJsType(typ), "description": toJsDoc(doc)}
+                     )
+                   | Field({name, typ, doc}) => (
+                       name,
+                       {"type": toJsType(typ), "description": toJsDoc(doc)}
+                     )
+                   | AsyncField({name, typ, doc}) => (
+                       name,
+                       {"type": toJsType(typ), "description": toJsDoc(doc)}
+                     )
+                   }
                  )
               |> jsObjMap
           });
@@ -265,6 +274,24 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
       }
     | NonNull(t) => graphqlNonNull(toJsType(t))
     | List(t) => graphqlList(toJsType(t))
+    | Enum({doc, name, values}) =>
+      graphqlEnum({
+        "name": name,
+        "values":
+          values
+          |> List.map((v: enumValue(_)) =>
+               (
+                 name,
+                 {
+                   "value": v.name,
+                   "deprecationReason": toJsDeprecationReason(v.deprecated),
+                   "description": toJsDoc(v.doc)
+                 }
+               )
+             )
+          |> jsObjMap,
+        "description": toJsDoc(doc)
+      })
     | String => graphqlString
     | Float => graphqlFloat
     | Int => graphqlInt
@@ -278,7 +305,25 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
       graphqlInputObject({
         "name": name,
         "fields": toJsArgs(fields),
-        "description": Js.Nullable.from_opt(doc)
+        "description": toJsDoc(doc)
+      })
+    | Arg.Enum({name, values, doc}) =>
+      graphqlEnum({
+        "name": name,
+        "values":
+          values
+          |> List.map((v: enumValue(_)) =>
+               (
+                 name,
+                 {
+                   "value": v.name,
+                   "deprecationReason": toJsDeprecationReason(v.deprecated),
+                   "description": toJsDoc(v.doc)
+                 }
+               )
+             )
+          |> jsObjMap,
+        "description": toJsDoc(doc)
       })
     | Arg.NonNull(t) => graphqlNonNull(toJsArgType(t))
     | Arg.List(t) => graphqlList(toJsArgType(t))
@@ -296,22 +341,21 @@ and toJsArgs: type a b. (Arg.argList(a, b), Js.Dict.t('c)) => Js.Dict.t('d) =
         name,
         {
           "type": toJsArgType(typ),
-          "description": Js.Nullable.from_opt(doc),
+          "description": toJsDoc(doc),
           /* More magic */
           "default": Obj.magic(default)
         }
       );
-    Arg.(
-      switch args {
-      | [] => dict
-      | [Arg.Arg({name, Arg.typ, doc}), ...rest] =>
-        addJsArg(dict, name, typ, doc, Js.Nullable.null);
-        toJsArgs(rest, dict);
-      | [Arg.DefaultArg({name, Arg.typ, default, doc}), ...rest] =>
-        addJsArg(dict, name, typ, doc, Js.Nullable.return(default));
-        toJsArgs(rest, dict);
-      }
-    );
+    open! Arg;
+    switch args {
+    | [] => dict
+    | [Arg.Arg({name, Arg.typ, doc}), ...rest] =>
+      addJsArg(dict, name, typ, doc, Js.Nullable.null);
+      toJsArgs(rest, dict);
+    | [Arg.DefaultArg({name, Arg.typ, default, doc}), ...rest] =>
+      addJsArg(dict, name, typ, doc, Js.Nullable.return(default));
+      toJsArgs(rest, dict);
+    };
   }
 and toJsSchema: type src. field('ctx, src) => jsField('t) =
   field => {
@@ -331,38 +375,46 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
       | InterfaceField(_) =>
         raise(Invalid_argument("Should not resolve interface field"))
       };
-    let resolveArg: type a. (string, Arg.typ(a), _, _) => _ =
-      (name, typ, jsArgs, f) =>
-        Obj.magic(
-          switch typ {
-          | Arg.NonNull(_) => f(Js.Dict.unsafeGet(jsArgs, name))
-          | _ =>
-            /* Convert from Js.Nullable.t to option */
-            f(
-              Obj.magic(
-                switch (Js.Dict.get(jsArgs, name)) {
-                | Some(a) => Js.Nullable.to_opt(a)
-                | None => None
-                }
-              )
-            )
-          }
-        );
+    let rec parseArg: type a. (string, Arg.typ(a), option(Js.Json.t)) => 'b =
+      (name, typ, value, nullable) =>
+        switch value {
+        | None => None
+        | Some(value) =>
+          let res =
+            switch typ {
+            | Arg.NonNull(t) => parseArg(name, t, Some(value), false)
+            | Arg.Enum({values}) =>
+              values
+              |> List.find((v: enumValue(_)) => v.name == Obj.magic(value))
+              |> Obj.magic
+            | _ => value |> Obj.magic
+            };
+          nullable ? res |> Obj.magic |> Js.Nullable.to_opt : res;
+        };
+    let resolveArg = (name, typ, jsArgs, f) => {
+      let value =
+        switch (Js.Dict.get(jsArgs, name)) {
+        | Some(a) => Js.Nullable.to_opt(a)
+        | None => None
+        };
+      let arg = parseArg(name, typ, value, true);
+      Obj.magic(f(arg));
+    };
+    let rec resolveArgs: type a b. (Arg.argList(a, b), _, _) => _ =
+      (args, jsArgs, f) => {
+        open! Arg;
+        switch args {
+        | [] => f
+        | [Arg({name, typ}), ...rest] =>
+          let res = resolveArg(name, typ, jsArgs, f);
+          resolveArgs(rest, jsArgs, res);
+        | [DefaultArg({name, typ}), ...rest] =>
+          let res = resolveArg(name, typ, jsArgs, f);
+          resolveArgs(rest, jsArgs, res);
+        };
+      };
     let jsResolve =
       Obj.magic((node, jsArgs, ctx) => {
-        let rec resolveArgs: type a b. (Arg.argList(a, b), _, _) => _ =
-          (args, jsArgs, f) =>
-            Arg.(
-              switch args {
-              | [] => f
-              | [Arg({name, typ}), ...rest] =>
-                let res = resolveArg(name, typ, jsArgs, f);
-                resolveArgs(rest, jsArgs, res);
-              | [DefaultArg({name, typ}), ...rest] =>
-                let res = resolveArg(name, typ, jsArgs, f);
-                resolveArgs(rest, jsArgs, res);
-              }
-            );
         let rec convertResultToJs: type a b. (typ(a, b), _, _) => _ =
           (typ, nullable, result) => {
             let anyRes = Obj.magic(result);
@@ -390,12 +442,8 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
       "type": jsType,
       "args": jsArgs,
       "resolve": jsResolve,
-      "deprecationReason":
-        switch deprecated {
-        | Deprecated(message) => Js.Nullable.return(message)
-        | NotDeprecated => Js.Nullable.null
-        },
-      "description": Js.Nullable.from_opt(doc)
+      "deprecationReason": toJsDeprecationReason(deprecated),
+      "description": toJsDoc(doc)
     };
   };
 
@@ -407,7 +455,8 @@ external execute_ : (t, string, 'b, 'c, Js.Json.t) => Js.Promise.t('d) =
 external parse_ : string => documentAst = "parse";
 
 [@bs.val] [@bs.module "graphql"]
-external validate_ : (t, documentAst, 'rules) => array(Js.Exn.t) = "validate";
+external validate_ : (t, documentAst, 'rules) => array(Js.Exn.t) =
+  "validate";
 
 [@bs.val] [@bs.module "graphql"] external specifiedRules : array(rule) = "";
 

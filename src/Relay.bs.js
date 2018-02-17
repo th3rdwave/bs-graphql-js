@@ -1,5 +1,6 @@
 'use strict';
 
+var Block              = require("bs-platform/lib/js/block.js");
 var Curry              = require("bs-platform/lib/js/curry.js");
 var GraphqlRelay       = require("graphql-relay");
 var Schema$BsGraphqlJs = require("./Schema.bs.js");
@@ -26,57 +27,63 @@ function Connection() {
   };
   var forwardsArgs = function () {
     return /* :: */[
-            Schema$BsGraphqlJs.Arg[/* arg */0](/* None */0, "first", Schema$BsGraphqlJs.Arg[/* int */7]),
+            Schema$BsGraphqlJs.Arg[/* arg */0](/* None */0, "first", Schema$BsGraphqlJs.Arg[/* int */8]),
             /* :: */[
-              Schema$BsGraphqlJs.Arg[/* arg */0](/* None */0, "after", Schema$BsGraphqlJs.Arg[/* string */5]),
+              Schema$BsGraphqlJs.Arg[/* arg */0](/* None */0, "after", Schema$BsGraphqlJs.Arg[/* string */6]),
               /* [] */0
             ]
           ];
   };
-  var pageInfoType = Schema$BsGraphqlJs.obj(/* Some */["Information about pagination in a connection."], /* None */0, /* None */0, "BsPageInfo", /* :: */[
-        Schema$BsGraphqlJs.field(/* Some */["When paginating forwards, are there more items?"], /* None */0, /* [] */0, "hasNextPage", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.bool), (function (_, node) {
-                return node[/* hasNextPage */0];
-              })),
-        /* :: */[
-          Schema$BsGraphqlJs.field(/* Some */["When paginating backwards, are there more items?"], /* None */0, /* [] */0, "hasPreviousPage", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.bool), (function (_, node) {
-                  return node[/* hasPreviousPage */1];
-                })),
-          /* :: */[
-            Schema$BsGraphqlJs.field(/* Some */["When paginating backwards, the cursor to continue."], /* None */0, /* [] */0, "startCursor", Schema$BsGraphqlJs.string, (function (_, node) {
-                    return node[/* startCursor */2];
-                  })),
-            /* :: */[
-              Schema$BsGraphqlJs.field(/* Some */["When paginating forwards, the cursor to continue."], /* None */0, /* [] */0, "endCursor", Schema$BsGraphqlJs.string, (function (_, node) {
-                      return node[/* endCursor */3];
-                    })),
-              /* [] */0
-            ]
-          ]
-        ]
-      ]);
+  var pageInfoType = Schema$BsGraphqlJs.obj(/* Some */["Information about pagination in a connection."], /* None */0, /* None */0, "BsPageInfo", Block.__(246, [(function () {
+              return /* :: */[
+                      Schema$BsGraphqlJs.field(/* Some */["When paginating forwards, are there more items?"], /* None */0, /* [] */0, "hasNextPage", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.bool), (function (_, node) {
+                              return node[/* hasNextPage */0];
+                            })),
+                      /* :: */[
+                        Schema$BsGraphqlJs.field(/* Some */["When paginating backwards, are there more items?"], /* None */0, /* [] */0, "hasPreviousPage", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.bool), (function (_, node) {
+                                return node[/* hasPreviousPage */1];
+                              })),
+                        /* :: */[
+                          Schema$BsGraphqlJs.field(/* Some */["When paginating backwards, the cursor to continue."], /* None */0, /* [] */0, "startCursor", Schema$BsGraphqlJs.string, (function (_, node) {
+                                  return node[/* startCursor */2];
+                                })),
+                          /* :: */[
+                            Schema$BsGraphqlJs.field(/* Some */["When paginating forwards, the cursor to continue."], /* None */0, /* [] */0, "endCursor", Schema$BsGraphqlJs.string, (function (_, node) {
+                                    return node[/* endCursor */3];
+                                  })),
+                            /* [] */0
+                          ]
+                        ]
+                      ]
+                    ];
+            })]));
   var definitions = function (name, nodeType) {
-    var edgeType = Schema$BsGraphqlJs.obj(/* Some */["An edge in a connection."], /* None */0, /* None */0, name + "Edge", /* :: */[
-          Schema$BsGraphqlJs.field(/* Some */["The item at the end of the edge"], /* None */0, /* [] */0, "node", Schema$BsGraphqlJs.nonNull(nodeType), (function (_, node) {
-                  return node[/* node */0];
-                })),
-          /* :: */[
-            Schema$BsGraphqlJs.field(/* Some */["A cursor for use in pagination"], /* None */0, /* [] */0, "cursor", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.string), (function (_, node) {
-                    return node[/* cursor */1];
-                  })),
-            /* [] */0
-          ]
-        ]);
-    var connectionType = Schema$BsGraphqlJs.obj(/* Some */["A connection to a list of items."], /* None */0, /* None */0, name + "Connection", /* :: */[
-          Schema$BsGraphqlJs.field(/* Some */["Information to aid in pagination."], /* None */0, /* [] */0, "pageInfo", Schema$BsGraphqlJs.nonNull(pageInfoType), (function (_, node) {
-                  return node[/* pageInfo */1];
-                })),
-          /* :: */[
-            Schema$BsGraphqlJs.field(/* Some */["A list of edges."], /* None */0, /* [] */0, "edges", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.list(Schema$BsGraphqlJs.nonNull(edgeType))), (function (_, node) {
-                    return node[/* edges */0];
-                  })),
-            /* [] */0
-          ]
-        ]);
+    var edgeType = Schema$BsGraphqlJs.obj(/* Some */["An edge in a connection."], /* None */0, /* None */0, name + "Edge", Block.__(246, [(function () {
+                return /* :: */[
+                        Schema$BsGraphqlJs.field(/* Some */["The item at the end of the edge"], /* None */0, /* [] */0, "node", Schema$BsGraphqlJs.nonNull(nodeType), (function (_, node) {
+                                return node[/* node */0];
+                              })),
+                        /* :: */[
+                          Schema$BsGraphqlJs.field(/* Some */["A cursor for use in pagination"], /* None */0, /* [] */0, "cursor", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.string), (function (_, node) {
+                                  return node[/* cursor */1];
+                                })),
+                          /* [] */0
+                        ]
+                      ];
+              })]));
+    var connectionType = Schema$BsGraphqlJs.obj(/* Some */["A connection to a list of items."], /* None */0, /* None */0, name + "Connection", Block.__(246, [(function () {
+                return /* :: */[
+                        Schema$BsGraphqlJs.field(/* Some */["Information to aid in pagination."], /* None */0, /* [] */0, "pageInfo", Schema$BsGraphqlJs.nonNull(pageInfoType), (function (_, node) {
+                                return node[/* pageInfo */1];
+                              })),
+                        /* :: */[
+                          Schema$BsGraphqlJs.field(/* Some */["A list of edges."], /* None */0, /* [] */0, "edges", Schema$BsGraphqlJs.nonNull(Schema$BsGraphqlJs.list(Schema$BsGraphqlJs.nonNull(edgeType))), (function (_, node) {
+                                  return node[/* edges */0];
+                                })),
+                          /* [] */0
+                        ]
+                      ];
+              })]));
     return /* record */[
             /* edgeType */edgeType,
             /* connectionType */connectionType
