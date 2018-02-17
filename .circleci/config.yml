@@ -1,0 +1,40 @@
+version: 2
+
+default_docker: &default_docker
+  working_directory: ~/bs-graphql-js
+  docker:
+    - image: circleci/node:8.9.4
+
+default_env: &default_env
+  NODE_ENV: test
+
+restore_yarn_cache: &restore_yarn_cache
+  restore_cache:
+    keys:
+      - v1-yarn-{{ arch }}-{{ checksum "package.json" }}
+      # Fallback in case checksum fails
+      - v1-yarn-{{ arch }}-
+
+save_yarn_cache: &save_yarn_cache
+  save_cache:
+    key: v1-yarn-{{ arch }}-{{ checksum "package.json" }}
+    paths:
+      - node_modules
+      - ~/.cache/yarn
+
+jobs:
+  build:
+    <<: *default_docker
+    environment:
+      <<: *default_env
+    steps:
+      - checkout
+      - *restore_yarn_cache
+      - run: yarn install --non-interactive --cache-folder ~/.cache/yarn
+      - *save_yarn_cache
+      - run: yarn build
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build
