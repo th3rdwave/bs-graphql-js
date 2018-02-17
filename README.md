@@ -16,3 +16,4 @@ It's missing a lot of things and the implementation is badly typed.
 - Properly type the implementation (aka remove some Obj.magic :S).
 - Examples
 - Maybe separate relay stuff in a separate package.
+- Tests
