@@ -12,16 +12,18 @@ type ctx = unit;
 let viewerType =
   obj(
     "Viewer",
-    ~fields=lazy [
-      /* Simple non null field */
-      field("firstName", ~typ=nonNull(string), ~args=[], ~resolve=(_ctx, node) =>
-        node.firstName
-      ),
-      /* Simple nullable field */
-      field("lastName", ~typ=string, ~args=[], ~resolve=(_ctx, node) =>
-        Some(node.lastName)
-      )
-    ]
+    ~fields=
+      lazy [
+        /* Simple non null field */
+        field(
+          "firstName", ~typ=nonNull(string), ~args=[], ~resolve=(_ctx, node) =>
+          node.firstName
+        ),
+        /* Simple nullable field */
+        field("lastName", ~typ=string, ~args=[], ~resolve=(_ctx, node) =>
+          Some(node.lastName)
+        )
+      ]
   );
 
 /* Type annotation for the root field is required */

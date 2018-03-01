@@ -8,9 +8,8 @@ external fromGlobalId :
     "id": string,
     "type": string
   } =
-  "";
+  ""; /* Not sure if there is a way to avoid this... */
 
-/* Not sure if there is a way to avoid this... */
 module type AppContext = {type t;};
 
 module Node = {
