@@ -6,7 +6,7 @@ external fromGlobalId :
   {
     .
     "id": string,
-    "type": string
+    "type": string,
   } =
   ""; /* Not sure if there is a way to avoid this... */
 
@@ -21,7 +21,7 @@ module Node = {
     {
       .
       "type": string,
-      "id": string
+      "id": string,
     } =
     "";
   let globalIdField = (typeName: string, ~resolve) =>
@@ -40,15 +40,15 @@ module Connection = (Ctx: AppContext) => {
     hasNextPage: bool,
     hasPreviousPage: bool,
     startCursor: option(string),
-    endCursor: option(string)
+    endCursor: option(string),
   };
   type edge('t) = {
     node: 't,
-    cursor: string
+    cursor: string,
   };
   type t('t) = {
     edges: array(edge('t)),
-    pageInfo
+    pageInfo,
   };
   let empty = () => {
     edges: [||],
@@ -56,8 +56,8 @@ module Connection = (Ctx: AppContext) => {
       hasNextPage: false,
       hasPreviousPage: false,
       startCursor: None,
-      endCursor: None
-    }
+      endCursor: None,
+    },
   };
   let forwardsArgs:
     type a. unit => Arg.argList(a, (option(int), option(string)) => a) =
@@ -103,12 +103,12 @@ module Connection = (Ctx: AppContext) => {
             ~doc="When paginating forwards, the cursor to continue.",
             ~resolve=(_ctx, node) =>
             node.endCursor
-          )
-        ]
+          ),
+        ],
     );
   type definition('a, 'b) = {
     edgeType: 'a,
-    connectionType: 'b
+    connectionType: 'b,
   };
   let definitions = (name, ~nodeType) => {
     let edgeType =
@@ -122,16 +122,16 @@ module Connection = (Ctx: AppContext) => {
               ~typ=nonNull(nodeType),
               ~args=[],
               ~resolve=(_ctx, node) => node.node,
-              ~doc="The item at the end of the edge"
+              ~doc="The item at the end of the edge",
             ),
             field(
               "cursor",
               ~typ=nonNull(string),
               ~args=[],
               ~resolve=(_ctx, node) => node.cursor,
-              ~doc="A cursor for use in pagination"
-            )
-          ]
+              ~doc="A cursor for use in pagination",
+            ),
+          ],
       );
     let connectionType =
       obj(
@@ -154,8 +154,8 @@ module Connection = (Ctx: AppContext) => {
               ~doc="A list of edges.",
               ~resolve=(_ctx, node) =>
               node.edges
-            )
-          ]
+            ),
+          ],
       );
     {edgeType, connectionType};
   };
