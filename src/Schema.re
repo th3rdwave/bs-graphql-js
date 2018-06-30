@@ -45,7 +45,8 @@ external graphqlNonNull : graphqlType => graphqlType = "GraphQLNonNull";
 [@bs.new] [@bs.module "graphql"]
 external graphqlList : graphqlType => graphqlType = "GraphQLList";
 
-[@bs.new] external graphqlEnum : 'a => graphqlType = "GraphQLEnumType"; /* Js input types */
+[@bs.new] [@bs.module "graphql"]
+external graphqlEnum : 'a => graphqlType = "GraphQLEnumType"; /* Js input types */
 
 [@bs.new] [@bs.module "graphql"]
 external graphqlInputObject : 'a => graphqlType = "GraphQLInputObjectType";
@@ -91,7 +92,7 @@ module Arg = {
   }
   and typ(_) =
     | Object(obj('a, 'b)): typ(option('a))
-    | List(typ('a)): typ(array(option('a)))
+    | List(typ('a)): typ(option(array('a)))
     | JsInteropType(jsInteropType(_, 'src)): typ(option('src))
     | NonNull(typ(option('a))): typ('a)
     | Enum(enum('a)): typ(option('a))
@@ -313,15 +314,16 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
     | NonNull(t) => graphqlNonNull(toJsType(t))
     | List(t) => graphqlList(toJsType(t))
     | Enum({doc, name, values}) =>
+      Js.log("Would be nice to know when this happens :D");
       graphqlEnum({
         "name": name,
         "values":
           values
           |> List.map((v: enumValue(_)) =>
                (
-                 name,
+                 v.name,
                  {
-                   "value": v.name,
+                   "value": v.value,
                    "deprecationReason": toJsDeprecationReason(v.deprecated),
                    "description": toJsDoc(v.doc),
                  },
@@ -329,7 +331,7 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
              )
           |> jsObjMap,
         "description": toJsDoc(doc),
-      })
+      });
     | String => graphqlString
     | Float => graphqlFloat
     | Int => graphqlInt
@@ -353,9 +355,9 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
           values
           |> List.map((v: enumValue(_)) =>
                (
-                 name,
+                 v.name,
                  {
-                   "value": v.name,
+                   "value": v.value,
                    "deprecationReason": toJsDeprecationReason(v.deprecated),
                    "description": toJsDoc(v.doc),
                  },
@@ -423,10 +425,6 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
           | Arg.NonNull(t) =>
             parseArg(name, t, value |> Js.Nullable.return)
             |> Js.Option.getExn
-            |> Obj.magic
-          | Arg.Enum({values}) =>
-            values
-            |> List.find((v: enumValue(_)) => v.name == Obj.magic(value))
             |> Obj.magic
           | _ => Some(value)
           }
