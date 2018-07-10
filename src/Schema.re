@@ -345,7 +345,7 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
     | Arg.Object({name, fields, doc}) =>
       graphqlInputObject({
         "name": name,
-        "fields": toJsArgs(fields),
+        "fields": toJsArgs(fields, Js.Dict.empty()),
         "description": toJsDoc(doc),
       })
     | Arg.Enum({name, values, doc}) =>
