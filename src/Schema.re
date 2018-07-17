@@ -406,13 +406,6 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
       | InterfaceField(_) =>
         raise(Invalid_argument("Should not resolve interface field"))
       };
-    let maybeResolve = (f, value) =>
-      switch (f) {
-      | Field(_) => Obj.magic(Js.Promise.resolve(value))
-      | AsyncField(_) => Obj.magic(value)
-      | InterfaceField(_) =>
-        raise(Invalid_argument("Should not resolve interface field"))
-      };
     let rec parseArg:
       type a. (string, Arg.typ(a), Js.nullable(Js.Json.t)) => 'b =
       (name, typ, value) =>
@@ -467,13 +460,19 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
               },
             );
           };
-        resolve(ctx, node)
-        |> Obj.magic
-        |> resolveArgs(args, jsArgs)
-        |> maybeResolve(field)
-        |> Js.Promise.then_(res =>
-             Js.Promise.resolve(convertResultToJs(typ, true, res))
-           );
+        let result =
+          resolve(ctx, node) |> Obj.magic |> resolveArgs(args, jsArgs);
+        switch (field) {
+        | Field(_) => convertResultToJs(typ, true, result) |> Obj.magic
+        | AsyncField(_) =>
+          result
+          |> Obj.magic
+          |> Js.Promise.then_(res =>
+               Js.Promise.resolve(convertResultToJs(typ, true, res))
+             )
+        | InterfaceField(_) =>
+          raise(Invalid_argument("Should not resolve interface field"))
+        };
       });
     let jsType = toJsType(typ);
     let jsArgs = toJsArgs(args, Js.Dict.empty());
