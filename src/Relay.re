@@ -1,22 +1,38 @@
 open Schema;
 
 [@bs.module "graphql-relay"]
-external fromGlobalId :
+external fromGlobalId:
   string =>
   {
     .
     "id": string,
     "type": string,
   } =
-  ""; /* Not sure if there is a way to avoid this... */
+  "";
 
+[@bs.module "graphql-relay"]
+external connectionFromArray_:
+  (
+    array('a),
+    {
+      .
+      "first": Js.nullable(int),
+      "last": Js.nullable(int),
+      "before": Js.nullable(string),
+      "after": Js.nullable(string),
+    }
+  ) =>
+  'b =
+  "connectionFromArray";
+
+/* Not sure if there is a way to avoid this... */
 module type AppContext = {type t;};
 
 module Node = {
   [@bs.module "graphql-relay"] [@bs.val]
-  external toGlobalId : (~typ: string, ~id: string) => string = "";
+  external toGlobalId: (~typ: string, ~id: string) => string = "";
   [@bs.module "graphql-relay"] [@bs.val]
-  external fromGlobalId :
+  external fromGlobalId:
     string =>
     {
       .
@@ -59,6 +75,24 @@ module Connection = (Ctx: AppContext) => {
       endCursor: None,
     },
   };
+  let fromArray =
+      (
+        ~first: option(int)=?,
+        ~last: option(int)=?,
+        ~before: option(string)=?,
+        ~after: option(string)=?,
+        array: array('a),
+      )
+      : t('a) =>
+    connectionFromArray_(
+      array,
+      {
+        "first": first |> Js.Nullable.fromOption,
+        "last": last |> Js.Nullable.fromOption,
+        "before": before |> Js.Nullable.fromOption,
+        "after": after |> Js.Nullable.fromOption,
+      },
+    );
   let forwardsArgs:
     type a. unit => Arg.argList(a, (option(int), option(string)) => a) =
     () => {
