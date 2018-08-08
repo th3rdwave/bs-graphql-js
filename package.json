@@ -7,9 +7,19 @@
     "clean": "bsb -clean-world"
   },
   "keywords": [
-    "BuckleScript"
+    "BuckleScript",
+    "graphql",
+    "relay",
+    "bindings"
   ],
-  "author": "",
+  "author": "Janic Duplessis",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janicduplessis/bs-graphql-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/janicduplessis/bs-graphql-js/issues"
+  },
   "license": "MIT",
   "peerDependencies": {
     "graphql": "^0.12.0",
