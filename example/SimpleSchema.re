@@ -1,13 +1,27 @@
 open Schema;
 
+type role =
+  | User
+  | Admin;
+
 type viewer = {
   firstName: string,
-  lastName: string
+  lastName: string,
+  role,
 };
 
-let getViewer = () => {firstName: "Jane", lastName: "Mills"};
+let getViewer = () => {firstName: "Jane", lastName: "Mills", role: Admin};
 
 type ctx = unit;
+
+let roleEnum =
+  enum(
+    "Role",
+    ~values=[
+      enumValue("USER", ~value=User),
+      enumValue("ADMIN", ~value=Admin),
+    ],
+  );
 
 let viewerType =
   obj(
@@ -22,8 +36,13 @@ let viewerType =
         /* Simple nullable field */
         field("lastName", ~typ=string, ~args=[], ~resolve=(_ctx, node) =>
           Some(node.lastName)
-        )
-      ]
+        ),
+        /* Simple enum field */
+        field(
+          "role", ~typ=nonNull(roleEnum), ~args=[], ~resolve=(_ctx, node) =>
+          node.role
+        ),
+      ],
   );
 
 /* Type annotation for the root field is required */

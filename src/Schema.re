@@ -14,41 +14,42 @@ type t;
 
 type graphqlType;
 
+/* Used to avoid creating the same graphql-js types multiple times. */
 let interfaceMap = Hashtbl.create(10);
-
-let objectMap = Hashtbl.create(10); /* Js types */
-
-[@bs.val] [@bs.module "graphql"]
-external graphqlString : graphqlType = "GraphQLString";
+let objectMap = Hashtbl.create(10);
+let enumMap = Hashtbl.create(10);
 
 [@bs.val] [@bs.module "graphql"]
-external graphqlFloat : graphqlType = "GraphQLFloat";
+external graphqlString: graphqlType = "GraphQLString";
 
 [@bs.val] [@bs.module "graphql"]
-external graphqlInt : graphqlType = "GraphQLInt";
+external graphqlFloat: graphqlType = "GraphQLFloat";
 
 [@bs.val] [@bs.module "graphql"]
-external graphqlBool : graphqlType = "GraphQLBoolean";
+external graphqlInt: graphqlType = "GraphQLInt";
 
 [@bs.val] [@bs.module "graphql"]
-external graphqlId : graphqlType = "GraphQLID";
+external graphqlBool: graphqlType = "GraphQLBoolean";
+
+[@bs.val] [@bs.module "graphql"] external graphqlId: graphqlType = "GraphQLID";
 
 [@bs.new] [@bs.module "graphql"]
-external graphqlObject : 'a => graphqlType = "GraphQLObjectType";
+external graphqlObject: 'a => graphqlType = "GraphQLObjectType";
 
 [@bs.new] [@bs.module "graphql"]
-external graphqlInterface : 'a => graphqlType = "GraphQLInterfaceType";
+external graphqlInterface: 'a => graphqlType = "GraphQLInterfaceType";
 
 [@bs.new] [@bs.module "graphql"]
-external graphqlNonNull : graphqlType => graphqlType = "GraphQLNonNull";
+external graphqlNonNull: graphqlType => graphqlType = "GraphQLNonNull";
 
 [@bs.new] [@bs.module "graphql"]
-external graphqlList : graphqlType => graphqlType = "GraphQLList";
-
-[@bs.new] external graphqlEnum : 'a => graphqlType = "GraphQLEnumType"; /* Js input types */
+external graphqlList: graphqlType => graphqlType = "GraphQLList";
 
 [@bs.new] [@bs.module "graphql"]
-external graphqlInputObject : 'a => graphqlType = "GraphQLInputObjectType";
+external graphqlEnum: 'a => graphqlType = "GraphQLEnumType"; /* Js input types */
+
+[@bs.new] [@bs.module "graphql"]
+external graphqlInputObject: 'a => graphqlType = "GraphQLInputObjectType";
 
 let toJsDoc = doc => Js.Nullable.fromOption(doc);
 
@@ -191,32 +192,21 @@ and typ(_, _) =
 
 let field = (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   Field({name, typ, args, resolve, deprecated, doc});
-
 let asyncField =
     (~doc=?, ~deprecated=NotDeprecated, ~args, name, ~typ, ~resolve) =>
   AsyncField({name, typ, args, resolve, deprecated, doc});
 
 let string = String;
-
 let float = Float;
-
 let int = Int;
-
 let bool = Bool;
-
 let id = Id;
-
 let nonNull = t => NonNull(t);
-
 let list = t => List(t);
-
 let enum = (~doc=?, name, ~values) => Enum({doc, name, values});
-
 let obj = (~doc=?, ~interfaces=[], ~isTypeOf=?, name, ~fields) =>
   Object({name, fields, interfaces, isTypeOf, doc});
-
 let interface = (~doc=?, name, ~fields) => Interface({doc, name, fields});
-
 let interfaceField = (~doc=?, name, ~typ) =>
   InterfaceField({doc, name, typ});
 
@@ -234,14 +224,12 @@ type jsField('a) = {
   .
   "type": graphqlType,
   "args":
-    Js.Dict.t(
-      {
-        .
-        "type": graphqlType,
-        "description": Js.nullable(string),
-        "default": Js.Json.t,
-      },
-    ),
+    Js.Dict.t({
+      .
+      "type": graphqlType,
+      "description": Js.nullable(string),
+      "default": Js.Json.t,
+    }),
   "resolve": 'a,
   "deprecationReason": Js.nullable(string),
   "description": Js.nullable(string),
@@ -313,23 +301,31 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
     | NonNull(t) => graphqlNonNull(toJsType(t))
     | List(t) => graphqlList(toJsType(t))
     | Enum({doc, name, values}) =>
-      graphqlEnum({
-        "name": name,
-        "values":
-          values
-          |> List.map((v: enumValue(_)) =>
-               (
-                 name,
-                 {
-                   "value": v.name,
-                   "deprecationReason": toJsDeprecationReason(v.deprecated),
-                   "description": toJsDoc(v.doc),
-                 },
-               )
-             )
-          |> jsObjMap,
-        "description": toJsDoc(doc),
-      })
+      switch (Hashtbl.find(enumMap, name)) {
+      | i => i
+      | exception Not_found =>
+        let enum =
+          graphqlEnum({
+            "name": name,
+            "values":
+              values
+              |> List.map((v: enumValue(_)) =>
+                   (
+                     name,
+                     {
+                       "value": v.name,
+                       "deprecationReason":
+                         toJsDeprecationReason(v.deprecated),
+                       "description": toJsDoc(v.doc),
+                     },
+                   )
+                 )
+              |> jsObjMap,
+            "description": toJsDoc(doc),
+          });
+        Hashtbl.add(enumMap, name, enum);
+        enum;
+      }
     | String => graphqlString
     | Float => graphqlFloat
     | Int => graphqlInt
@@ -486,16 +482,16 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
   };
 
 [@bs.val] [@bs.module "graphql"]
-external execute_ : (t, string, 'b, 'c, Js.Json.t) => Js.Promise.t('d) =
+external execute_: (t, string, 'b, 'c, Js.Json.t) => Js.Promise.t('d) =
   "graphql";
 
 [@bs.val] [@bs.module "graphql"]
-external parse_ : string => documentAst = "parse";
+external parse_: string => documentAst = "parse";
 
 [@bs.val] [@bs.module "graphql"]
-external validate_ : (t, documentAst, 'rules) => array(Js.Exn.t) = "validate";
+external validate_: (t, documentAst, 'rules) => array(Js.Exn.t) = "validate";
 
-[@bs.val] [@bs.module "graphql"] external specifiedRules : array(rule) = "";
+[@bs.val] [@bs.module "graphql"] external specifiedRules: array(rule) = "";
 
 let execute =
     (
@@ -515,7 +511,7 @@ let execute =
        )
   );
 
-let validate = (~schema: t, ~query: string) : array(exn) => {
+let validate = (~schema: t, ~query: string): array(exn) => {
   let ast = parse_(query);
   validate_(schema, ast, specifiedRules)
   |> Array.map(err =>
