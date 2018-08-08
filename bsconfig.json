@@ -4,7 +4,10 @@
   "bsc-flags": ["-bs-no-version-header", "-bs-super-errors"],
   "sources": [
     "src",
-    "example"
+    {
+      "dir": "example",
+      "type": "dev"
+    }
   ],
   "package-specs": {
     "module": "commonjs",
