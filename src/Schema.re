@@ -311,9 +311,9 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
               values
               |> List.map((v: enumValue(_)) =>
                    (
-                     name,
+                     v.name,
                      {
-                       "value": v.name,
+                       "value": v.value,
                        "deprecationReason":
                          toJsDeprecationReason(v.deprecated),
                        "description": toJsDoc(v.doc),
