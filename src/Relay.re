@@ -83,16 +83,29 @@ module Connection = (Ctx: AppContext) => {
         ~after: option(string)=?,
         array: array('a),
       )
-      : t('a) =>
-    connectionFromArray_(
-      array,
-      {
-        "first": first |> Js.Nullable.fromOption,
-        "last": last |> Js.Nullable.fromOption,
-        "before": before |> Js.Nullable.fromOption,
-        "after": after |> Js.Nullable.fromOption,
+      : t('a) => {
+    let jsConnection =
+      connectionFromArray_(
+        array,
+        {
+          "first": first |> Js.Nullable.fromOption,
+          "last": last |> Js.Nullable.fromOption,
+          "before": before |> Js.Nullable.fromOption,
+          "after": after |> Js.Nullable.fromOption,
+        },
+      );
+    {
+      edges:
+        jsConnection##edges
+        |> Array.map(edge => {node: edge##node, cursor: edge##cursor}),
+      pageInfo: {
+        hasNextPage: jsConnection##pageInfo##hasNextPage,
+        hasPreviousPage: jsConnection##pageInfo##hasPreviousPage,
+        startCursor: jsConnection##pageInfo##startCursor |> Js.toOption,
+        endCursor: jsConnection##pageInfo##endCursor |> Js.toOption,
       },
-    );
+    };
+  };
   let forwardsArgs:
     type a. unit => Arg.argList(a, (option(int), option(string)) => a) =
     () => {
