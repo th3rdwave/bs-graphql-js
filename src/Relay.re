@@ -11,6 +11,9 @@ external fromGlobalId:
   "";
 
 [@bs.module "graphql-relay"]
+external toGlobalId: (~typ: string, ~localId: string) => string = "";
+
+[@bs.module "graphql-relay"]
 external connectionFromArray_:
   (
     array('a),
