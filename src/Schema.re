@@ -339,7 +339,7 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
     | Arg.Object({name, fields, doc}) =>
       graphqlInputObject({
         "name": name,
-        "fields": toJsArgs(fields),
+        "fields": toJsArgs(fields, Js.Dict.empty()),
         "description": toJsDoc(doc),
       })
     | Arg.Enum({name, values, doc}) =>
@@ -349,9 +349,9 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
           values
           |> List.map((v: enumValue(_)) =>
                (
-                 name,
+                 v.name,
                  {
-                   "value": v.name,
+                   "value": v.value,
                    "deprecationReason": toJsDeprecationReason(v.deprecated),
                    "description": toJsDoc(v.doc),
                  },
@@ -412,10 +412,6 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
           | Arg.NonNull(t) =>
             parseArg(name, t, value |> Js.Nullable.return)
             |> Js.Option.getExn
-            |> Obj.magic
-          | Arg.Enum({values}) =>
-            values
-            |> List.find((v: enumValue(_)) => v.name == Obj.magic(value))
             |> Obj.magic
           | _ => Some(value)
           }
