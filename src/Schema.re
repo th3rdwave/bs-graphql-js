@@ -92,7 +92,7 @@ module Arg = {
   }
   and typ(_) =
     | Object(obj('a, 'b)): typ(option('a))
-    | List(typ('a)): typ(array(option('a)))
+    | List(typ('a)): typ(option(array('a)))
     | JsInteropType(jsInteropType(_, 'src)): typ(option('src))
     | NonNull(typ(option('a))): typ('a)
     | Enum(enum('a)): typ(option('a))
