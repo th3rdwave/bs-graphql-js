@@ -54,7 +54,7 @@ module Node = {
     );
 };
 
-module Connection = (Ctx: AppContext) => {
+module Connection = {
   type pageInfo = {
     hasNextPage: bool,
     hasPreviousPage: bool,
@@ -115,7 +115,7 @@ module Connection = (Ctx: AppContext) => {
       open! Arg;
       [arg("first", ~typ=int), arg("after", ~typ=string)];
     };
-  let pageInfoType: typ(Ctx.t, option(pageInfo)) =
+  let pageInfoType = (): typ('a, option(pageInfo)) =>
     /* Needs a different name than the one in graphql-relay */
     obj(
       "BsPageInfo",
@@ -191,7 +191,7 @@ module Connection = (Ctx: AppContext) => {
           lazy [
             field(
               "pageInfo",
-              ~typ=nonNull(pageInfoType),
+              ~typ=nonNull(pageInfoType()),
               ~args=[],
               ~doc="Information to aid in pagination.",
               ~resolve=(_ctx, node) =>

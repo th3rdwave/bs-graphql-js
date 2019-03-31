@@ -32,6 +32,6 @@
     "graphql-relay": "^0.5.0"
   },
   "devDependencies": {
-    "bs-platform": "^4.0.3"
+    "bs-platform": "^5.0.0"
   }
 }
