@@ -220,7 +220,8 @@ let jsObjMap = list =>
        Js.Dict.empty(),
      );
 
-type jsField('a) = {
+type jsResolveFn;
+type jsFieldConfig = {
   .
   "type": graphqlType,
   "args":
@@ -230,12 +231,13 @@ type jsField('a) = {
       "description": Js.nullable(string),
       "default": Js.Json.t,
     }),
-  "resolve": 'a,
+  "resolve": jsResolveFn,
   "deprecationReason": Js.nullable(string),
   "description": Js.nullable(string),
 }; /* TODO: it would be possible to type this properly */
 
 let interopJsType = t => JsInteropType(t);
+
 
 let rec toJsType: type src. typ('ctx, src) => graphqlType =
   typ =>
@@ -332,6 +334,7 @@ let rec toJsType: type src. typ('ctx, src) => graphqlType =
     | Bool => graphqlBool
     | Id => graphqlId
     }
+
 and toJsArgType: type a. Arg.typ(a) => graphqlType =
   typ =>
     switch (typ) {
@@ -368,6 +371,7 @@ and toJsArgType: type a. Arg.typ(a) => graphqlType =
     | Arg.Bool => graphqlBool
     | Arg.Id => graphqlId
     }
+
 and toJsArgs: type a b. (Arg.argList(a, b), Js.Dict.t('c)) => Js.Dict.t('d) =
   (args, dict) => {
     let addJsArg = (dict, name, typ, doc, default) =>
@@ -391,7 +395,8 @@ and toJsArgs: type a b. (Arg.argList(a, b), Js.Dict.t('c)) => Js.Dict.t('d) =
       toJsArgs(rest, dict);
     };
   }
-and toJsSchema: type src. field('ctx, src) => jsField('t) =
+
+and toJsSchema: type src. field('ctx, src) => jsFieldConfig =
   field => {
     /* This is full of magic, partly because we need to do crazy stuff, partly
      * because of my lack of ocaml skills.  */
@@ -447,8 +452,9 @@ and toJsSchema: type src. field('ctx, src) => jsField('t) =
               switch (typ) {
               | NonNull(t) => convertResultToJs(t, false, anyRes)
               | _ =>
-                nullable ?
-                  Js.Nullable.fromOption(anyRes) : Js.Nullable.return(anyRes)
+                nullable
+                  ? Js.Nullable.fromOption(anyRes)
+                  : Js.Nullable.return(anyRes)
               },
             );
           };
