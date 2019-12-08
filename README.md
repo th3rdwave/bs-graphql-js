@@ -9,7 +9,6 @@ Bindings for [graphql](https://github.com/graphql/graphql-js) and [graphql-relay
 
 It's missing a lot of things and the implementation is badly typed.
 
-- rei interface
 - Union types
 - Better type safety for interfaces
 - Custom scalar types
