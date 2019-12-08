@@ -25,7 +25,8 @@
     "bsconfig.json",
     "LICENSE",
     "README.md",
-    "src/**/*.re"
+    "src/**/*.re",
+    "src/**/*.rei"
   ],
   "peerDependencies": {
     "graphql": "*",
