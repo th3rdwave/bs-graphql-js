@@ -5,6 +5,21 @@ Bindings for [graphql](https://github.com/graphql/graphql-js) and [graphql-relay
 [![npm version](https://badge.fury.io/js/bs-graphql-js.svg)](https://badge.fury.io/js/bs-graphql-js)
 [![CircleCI](https://circleci.com/gh/janicduplessis/bs-graphql-js.svg?style=svg)](https://circleci.com/gh/janicduplessis/bs-graphql-js)
 
+## Install
+
+```sh
+npm install bs-graphql-js
+
+# or
+
+yarn add bs-graphql-js
+```
+
+**NOTE**
+
+As of version 0.6.0 this requires bucklescript 7.0+
+
+
 ## TODO
 
 It's missing a lot of things and the implementation is badly typed.

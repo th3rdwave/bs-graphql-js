@@ -1,6 +1,6 @@
 {
   "name": "bs-graphql-js",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "scripts": {
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
@@ -28,8 +28,8 @@
     "src/**/*.re"
   ],
   "peerDependencies": {
-    "graphql": "^14.5.8",
-    "graphql-relay": "^0.6.0"
+    "graphql": "*",
+    "graphql-relay": "*"
   },
   "devDependencies": {
     "bs-platform": "^7.0.1"
