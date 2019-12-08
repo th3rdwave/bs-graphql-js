@@ -1,48 +1,32 @@
 open Schema;
 
 [@bs.module "graphql-relay"]
-external fromGlobalId:
-  string =>
-  {
-    .
-    "id": string,
-    "type": string,
-  } =
-  "";
-
-[@bs.module "graphql-relay"]
-external toGlobalId: (~typ: string, ~localId: string) => string = "";
-
-[@bs.module "graphql-relay"]
 external connectionFromArray_:
   (
     array('a),
     {
       .
-      "first": Js.nullable(int),
-      "last": Js.nullable(int),
-      "before": Js.nullable(string),
-      "after": Js.nullable(string),
+      "first": option(int),
+      "last": option(int),
+      "before": option(string),
+      "after": option(string),
     }
   ) =>
   'b =
   "connectionFromArray";
 
-/* Not sure if there is a way to avoid this... */
-module type AppContext = {type t;};
-
 module Node = {
   [@bs.module "graphql-relay"] [@bs.val]
-  external toGlobalId: (~typ: string, ~id: string) => string = "";
+  external toGlobalId: (~typ: string, ~id: string) => string = "toGlobalId";
+
+  type fromGlobalIdResult = {
+    [@bs.as "type"]
+    type_: string,
+    id: string,
+  };
+
   [@bs.module "graphql-relay"] [@bs.val]
-  external fromGlobalId:
-    string =>
-    {
-      .
-      "type": string,
-      "id": string,
-    } =
-    "";
+  external fromGlobalId: string => fromGlobalIdResult = "fromGlobalId";
   let globalIdField = (typeName: string, ~resolve) =>
     field(
       "id",
@@ -90,12 +74,7 @@ module Connection = {
     let jsConnection =
       connectionFromArray_(
         array,
-        {
-          "first": first |> Js.Nullable.fromOption,
-          "last": last |> Js.Nullable.fromOption,
-          "before": before |> Js.Nullable.fromOption,
-          "after": after |> Js.Nullable.fromOption,
-        },
+        {"first": first, "last": last, "before": before, "after": after},
       );
     {
       edges:
@@ -121,7 +100,7 @@ module Connection = {
       "BsPageInfo",
       ~doc="Information about pagination in a connection.",
       ~fields=
-        lazy [
+        lazy([
           field(
             "hasNextPage",
             ~typ=nonNull(bool),
@@ -154,7 +133,7 @@ module Connection = {
             ~resolve=(_ctx, node) =>
             node.endCursor
           ),
-        ],
+        ]),
     );
   type definition('a, 'b) = {
     edgeType: 'a,
@@ -166,7 +145,7 @@ module Connection = {
         name ++ "Edge",
         ~doc="An edge in a connection.",
         ~fields=
-          lazy [
+          lazy([
             field(
               "node",
               ~typ=nonNull(nodeType),
@@ -181,14 +160,14 @@ module Connection = {
               ~resolve=(_ctx, node) => node.cursor,
               ~doc="A cursor for use in pagination",
             ),
-          ],
+          ]),
       );
     let connectionType =
       obj(
         name ++ "Connection",
         ~doc="A connection to a list of items.",
         ~fields=
-          lazy [
+          lazy([
             field(
               "pageInfo",
               ~typ=nonNull(pageInfoType()),
@@ -205,7 +184,7 @@ module Connection = {
               ~resolve=(_ctx, node) =>
               node.edges
             ),
-          ],
+          ]),
       );
     {edgeType, connectionType};
   };
